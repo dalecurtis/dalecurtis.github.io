@@ -1,0 +1,61 @@
+<canvas style="width: 640px; height: 480px" id="inputCanvas"></canvas>
+<br/></br>
+<img id="test"/>
+<!--script src="stars.js"></script-->
+<script src="swirl.js"></script>
+<script src="crc32.js"></script>
+<script src="apng.js"></script>
+<script>
+const WIDTH = 640;
+const HEIGHT = 480;
+const DELAY_NUM = 1;
+const DELAY_DEN = 10;
+const CRC32P = 0xEDB88320;
+const FRAMES = 10;
+
+
+document.addEventListener('DOMContentLoaded', async _ => {
+  var input_canvas = document.getElementById('inputCanvas');
+  var output_canvas = document.getElementById('outputCanvas');
+  var log = document.querySelector('textarea');
+
+  input_canvas.width = WIDTH;
+  input_canvas.height = HEIGHT;
+
+  let input_ctx = input_canvas.getContext("2d");
+  // let anim = makeStars(10000);
+  let particles = generateParticles(101, WIDTH, HEIGHT);
+
+  var have_frames;
+  let frame_encode_complete = new Promise((resolve, reject) => {
+    have_frames = resolve;
+  });
+
+  let frames = [];
+  for (let i = 0; i < FRAMES; ++i) {
+    // animateStars(input_ctx, WIDTH, HEIGHT, stars, 1);
+    anim(input_canvas, input_ctx, particles);
+    input_canvas.toBlob(blob => {
+      blob.arrayBuffer().then(arr => {
+        let typed = new Uint8Array(arr);
+        if (frames.length == 0) {
+          frames.push(typed);
+        } else {
+          frames.push(typed.subarray(
+              findChunk(typed, 'IDAT'), findChunk(typed, 'IEND')));
+        }
+
+        if (frames.length == FRAMES)
+          have_frames();
+      });
+    }, "image/png");
+  }
+
+  await frame_encode_complete;
+
+  let apng = createAnimatedPNG(frames);
+  var blob = new Blob([apng], {type: 'application/octet-stream'});
+  document.querySelector('img').src = URL.createObjectURL(blob);
+});
+
+</script>
