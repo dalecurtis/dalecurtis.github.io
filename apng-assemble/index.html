@@ -37,14 +37,7 @@ document.addEventListener('DOMContentLoaded', async _ => {
     anim(input_canvas, input_ctx, particles);
     input_canvas.toBlob(blob => {
       blob.arrayBuffer().then(arr => {
-        let typed = new Uint8Array(arr);
-        if (frames.length == 0) {
-          frames.push(typed);
-        } else {
-          frames.push(typed.subarray(
-              findChunk(typed, 'IDAT'), findChunk(typed, 'IEND')));
-        }
-
+        frames.push(new Uint8Array(arr));
         if (frames.length == FRAMES)
           have_frames();
       });

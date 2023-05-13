@@ -107,7 +107,7 @@ function createAnimatedPNG(frames) {
     }
 
     // Now convert IDAT chunks to fdAT -- each frame may have many IDATs.
-    let index = 0;
+    let index = findChunk(frame, 'IDAT');
     do {
       let input_view = new DataView(frame.buffer, frame.byteOffset + index);
       let idat_len = input_view.getUint32(false);
@@ -120,11 +120,11 @@ function createAnimatedPNG(frames) {
       writer.closeChunk();
       actual_size += writer.size();
 
-      let next_index = findChunk(frame.subarray(index + idat_len + 12), 'IDAT');
-      if (next_index < 0)
-        break;
-      index += idat_len + 12 + next_index;
-    } while (true)
+      let chunk_end = index + idat_len + 12;
+      index = findChunk(frame.subarray(chunk_end), 'IDAT');
+      if (index >= 0)
+        index += chunk_end;
+    } while (index >= 0)
   }
 
   let iend = frames[0].subarray(findChunk(frames[0], 'IEND'));
