@@ -13,6 +13,11 @@ const WIDTH = 640;
 const HEIGHT = 480;
 const FRAMES = 10;
 
+function displayImageData(img, imgData) {
+  let blob = new Blob([imgData], {type: 'application/octet-stream'});
+  img.src = URL.createObjectURL(blob);
+}
+
 document.addEventListener('DOMContentLoaded', async _ => {
   let input_canvas = new OffscreenCanvas(WIDTH, HEIGHT);
   let input_ctx = input_canvas.getContext("2d");
@@ -30,13 +35,12 @@ document.addEventListener('DOMContentLoaded', async _ => {
   for (let i = 0; i < FRAMES; ++i) {
     // animateStars(input_ctx, WIDTH, HEIGHT, stars, 1);
     anim(input_canvas, input_ctx, particles);
-    input_canvas.convertToBlob({type: "image/png"}).then(blob => {
-      let img = document.createElement("img");
-      let img_blob = new Blob([blob], {type: 'application/octet-stream'});
+    input_canvas.convertToBlob({type: 'image/png'}).then(blob => {
+      let img = document.createElement('img');
       img.width = WIDTH / 5;
       img.height = HEIGHT / 5;
-      img.style.paddingRight = "2px";
-      img.src = URL.createObjectURL(img_blob);
+      img.style.paddingRight = '2px';
+      displayImageData(img, blob);
       div.appendChild(img);
 
       blob.arrayBuffer().then(arr => {
@@ -44,14 +48,13 @@ document.addEventListener('DOMContentLoaded', async _ => {
         if (frames.length == FRAMES)
           have_frames();
       });
-    }, "image/png");
+    }, 'image/png');
   }
 
   await frame_encode_complete;
 
   let apng = createAnimatedPNG(frames);
-  let blob = new Blob([apng], {type: 'application/octet-stream'});
-  document.getElementById('outputImage').src = URL.createObjectURL(blob);
+  displayImageData(document.getElementById('outputImage'), apng);
 });
 
 </script>
