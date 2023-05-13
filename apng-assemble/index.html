@@ -1,6 +1,9 @@
-<canvas style="width: 640px; height: 480px" id="inputCanvas"></canvas>
-<br/></br>
-<img id="test"/>
+<title>Assembles an APNG from PNGs created by canvas.toBlob()</title>
+Source Images:<br/>
+<div></div><br/>
+Output Image:<br/>
+<img id="outputImage"/><br/><br/>
+<a href="https://github.com/dalecurtis/dalecurtis.github.io/tree/master/apng-assemble">Source Code</a>
 <!--script src="stars.js"></script-->
 <script src="swirl.js"></script>
 <script src="crc32.js"></script>
@@ -13,16 +16,10 @@ const DELAY_DEN = 10;
 const CRC32P = 0xEDB88320;
 const FRAMES = 10;
 
-
 document.addEventListener('DOMContentLoaded', async _ => {
-  var input_canvas = document.getElementById('inputCanvas');
-  var output_canvas = document.getElementById('outputCanvas');
-  var log = document.querySelector('textarea');
-
-  input_canvas.width = WIDTH;
-  input_canvas.height = HEIGHT;
-
+  let input_canvas = new OffscreenCanvas(WIDTH, HEIGHT);
   let input_ctx = input_canvas.getContext("2d");
+
   // let anim = makeStars(10000);
   let particles = generateParticles(101, WIDTH, HEIGHT);
 
@@ -31,11 +28,19 @@ document.addEventListener('DOMContentLoaded', async _ => {
     have_frames = resolve;
   });
 
+  let div = document.querySelector('div');
   let frames = [];
   for (let i = 0; i < FRAMES; ++i) {
     // animateStars(input_ctx, WIDTH, HEIGHT, stars, 1);
     anim(input_canvas, input_ctx, particles);
-    input_canvas.toBlob(blob => {
+    input_canvas.convertToBlob({type: "image/png"}).then(blob => {
+      let img = document.createElement("img");
+      let img_blob = new Blob([blob], {type: 'application/octet-stream'});
+      img.width = WIDTH / 5;
+      img.height = HEIGHT / 5;
+      img.src = URL.createObjectURL(img_blob);
+      div.appendChild(img);
+
       blob.arrayBuffer().then(arr => {
         frames.push(new Uint8Array(arr));
         if (frames.length == FRAMES)
@@ -47,8 +52,8 @@ document.addEventListener('DOMContentLoaded', async _ => {
   await frame_encode_complete;
 
   let apng = createAnimatedPNG(frames);
-  var blob = new Blob([apng], {type: 'application/octet-stream'});
-  document.querySelector('img').src = URL.createObjectURL(blob);
+  let blob = new Blob([apng], {type: 'application/octet-stream'});
+  document.getElementById('outputImage').src = URL.createObjectURL(blob);
 });
 
 </script>
