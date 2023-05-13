@@ -29,6 +29,7 @@ class ChunkWriter {
   closeChunk() {
     let data =
         new DataView(this.view.buffer, this.view.byteOffset + 4, this.pos - 4);
+    const CRC32P = 0xEDB88320;
     this.view.setUint32(this.pos, crc32_compute_view(CRC32P, data), false);
     this.pos += 4;
     this.view.setUint32(0, this.pos - 12);
@@ -64,8 +65,12 @@ function createFCTL(sequence_number, width, height) {
   writer.writeUint32(height);
   writer.writeUint32(0); // x_offset
   writer.writeUint32(0); // y_offset
+
+  const DELAY_NUM = 1;
+  const DELAY_DEN = 10; // 10fps
   writer.writeUint16(DELAY_NUM);
   writer.writeUint16(DELAY_DEN);
+
   writer.writeUint8(0); // dispose_op
   writer.writeUint8(0); // blend_op
   writer.closeChunk();
