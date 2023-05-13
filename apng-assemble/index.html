@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async _ => {
       let img_blob = new Blob([blob], {type: 'application/octet-stream'});
       img.width = WIDTH / 5;
       img.height = HEIGHT / 5;
+      img.style.paddingRight = "2px";
       img.src = URL.createObjectURL(img_blob);
       div.appendChild(img);
 
