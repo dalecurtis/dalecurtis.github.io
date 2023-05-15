@@ -4,7 +4,6 @@ Source Images:<br/>
 Output Image:<br/>
 <img id="outputImage"/><br/><br/>
 <a href="https://github.com/dalecurtis/dalecurtis.github.io/tree/master/apng-assemble">Source Code</a>
-<!--script src="stars.js"></script-->
 <script src="swirl.js"></script>
 <script src="crc32.js"></script>
 <script src="apng.js"></script>
@@ -12,6 +11,8 @@ Output Image:<br/>
 const WIDTH = 640;
 const HEIGHT = 480;
 const FRAMES = 10;
+const DELAY_NUMERATOR = 1;
+const DELAY_DENOMINATOR = 10;  // 10fps.
 
 function displayImageData(img, imgData) {
   let blob = new Blob([imgData], {type: 'application/octet-stream'});
@@ -22,30 +23,23 @@ document.addEventListener('DOMContentLoaded', async _ => {
   let input_canvas = new OffscreenCanvas(WIDTH, HEIGHT);
   let input_ctx = input_canvas.getContext("2d");
 
-  // let anim = makeStars(10000);
-  let particles = generateParticles(101, WIDTH, HEIGHT);
+  let particles = generateParticles(
+      101, input_canvas.width, input_canvas.height);
 
   var have_frames;
   let frame_encode_complete = new Promise((resolve, reject) => {
     have_frames = resolve;
   });
 
-  let div = document.querySelector('div');
-  let frames = [];
-  for (let i = 0; i < FRAMES; ++i) {
-    // animateStars(input_ctx, WIDTH, HEIGHT, stars, 1);
+  // Step animation and create png from each step.
+  let frames = new Array(FRAMES);
+  let frame_count = 0;
+  for (let i = 0; i < frames.length; ++i) {
     anim(input_canvas, input_ctx, particles);
     input_canvas.convertToBlob({type: 'image/png'}).then(blob => {
-      let img = document.createElement('img');
-      img.width = WIDTH / 5;
-      img.height = HEIGHT / 5;
-      img.style.paddingRight = '2px';
-      displayImageData(img, blob);
-      div.appendChild(img);
-
       blob.arrayBuffer().then(arr => {
-        frames.push(new Uint8Array(arr));
-        if (frames.length == FRAMES)
+        frames[i] = new Uint8Array(arr);
+        if (++frame_count == frames.length)
           have_frames();
       });
     }, 'image/png');
@@ -53,7 +47,23 @@ document.addEventListener('DOMContentLoaded', async _ => {
 
   await frame_encode_complete;
 
-  let apng = createAnimatedPNG(frames);
+  // Display source frames for demo purposes.
+  const PADDING = 2;
+  let div = document.querySelector('div');
+  div.style.width = (input_canvas.width + (frames.length / 2) * PADDING) + "px";
+  for (let i = 0; i < frames.length; ++i) {
+    let img = document.createElement('img');
+    img.width = input_canvas.width / 5;
+    img.height = input_canvas.height / 5;
+    img.style.paddingRight = PADDING + 'px';
+    img.style.paddingBottom = PADDING + 'px';
+    displayImageData(img, frames[i]);
+    div.appendChild(img);
+  }
+
+  let apng = createAnimatedPNG(
+      frames, input_canvas.width, input_canvas.height,
+      DELAY_NUMERATOR, DELAY_DENOMINATOR);
   displayImageData(document.getElementById('outputImage'), apng);
 });
 

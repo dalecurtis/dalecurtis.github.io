@@ -57,7 +57,8 @@ function createACTL(frame_count) {
   return actl;
 }
 
-function createFCTL(sequence_number, width, height) {
+function createFCTL(sequence_number, width, height, delay_numerator,
+                    delay_denominator) {
   let fctl = new Uint8Array(38);
   let writer = new ChunkWriter('fcTL', fctl.buffer);
   writer.writeUint32(sequence_number);
@@ -65,22 +66,19 @@ function createFCTL(sequence_number, width, height) {
   writer.writeUint32(height);
   writer.writeUint32(0); // x_offset
   writer.writeUint32(0); // y_offset
-
-  const DELAY_NUM = 1;
-  const DELAY_DEN = 10; // 10fps
-  writer.writeUint16(DELAY_NUM);
-  writer.writeUint16(DELAY_DEN);
-
+  writer.writeUint16(delay_numerator);
+  writer.writeUint16(delay_denominator);
   writer.writeUint8(0); // dispose_op
   writer.writeUint8(0); // blend_op
   writer.closeChunk();
   return fctl;
 }
 
-function createAnimatedPNG(frames) {
+function createAnimatedPNG(frames, width, height, delay_numerator,
+                           delay_denominator) {
   // Total size should be size of all IDATs plus new fcTL, acTL chunks.
-  let estimatedSize = frames.reduce((a, b) => a + b.length, 0) * 1.25;
-  let apng = new Uint8Array(estimatedSize);
+  let estimated_size = frames.reduce((a, b) => a + b.length, 0) * 1.25;
+  let apng = new Uint8Array(estimated_size);
   let actual_size = 0;
 
   // Copy png signature + IHDR chunk out of first frame.
@@ -94,11 +92,12 @@ function createAnimatedPNG(frames) {
   actual_size += actl.length;
 
   let sequence_number = 0;
-  for (let i = 0; i < FRAMES; ++i) {
+  for (let i = 0; i < frames.length; ++i) {
     let frame = frames[i];
 
     // Write fcTL.
-    let fctl = createFCTL(sequence_number++, WIDTH, HEIGHT);
+    let fctl = createFCTL(sequence_number++, width, height, delay_numerator,
+                          delay_denominator);
     apng.set(fctl, actual_size);
     actual_size += fctl.length;
 
